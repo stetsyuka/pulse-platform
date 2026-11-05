@@ -11,6 +11,15 @@ def test_discount_half():
     assert calculate_discount_cents(2000, 50) == 1000
 
 
+def test_discount_has_no_float_drift():
+    # 100 * 0.29 у float = 28.999…, int() дав би 28
+    assert calculate_discount_cents(100, 29) == 29
+
+
+def test_discount_rounds_half_up():
+    assert calculate_discount_cents(5, 10) == 1  # 0.5 цента → 1
+
+
 def test_discount_out_of_range():
     with pytest.raises(InvalidDiscountError):
         calculate_discount_cents(1000, 101)

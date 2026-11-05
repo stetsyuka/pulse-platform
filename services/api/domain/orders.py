@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,8 @@ class InvalidDiscountError(Exception):
 def calculate_discount_cents(subtotal_cents: int, percent: int) -> int:
     if not 0 <= percent <= 100:
         raise InvalidDiscountError(f"discount percent out of range: {percent}")
-    return int(subtotal_cents * (percent / 100))
+    # Цілочисельно з округленням половини вгору: float дає 100 * 0.29 = 28.999…
+    return (subtotal_cents * percent + 50) // 100
 
 
 async def create_order(
@@ -28,7 +29,7 @@ async def create_order(
         subtotal_cents=subtotal_cents,
         discount_cents=calculate_discount_cents(subtotal_cents, discount_percent),
         status="new",
-        created_at=datetime.utcnow(),  # noqa: DTZ003
+        created_at=datetime.now(UTC),
     )
     session.add(order)
     await session.commit()
