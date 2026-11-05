@@ -1,0 +1,35 @@
+---
+paths:
+  - "services/api/**/*.py"
+  - "services/api/migrations/**/*.py"
+---
+
+# Правила розробки Backend API та міграцій (FastAPI + SQLAlchemy 2.0)
+
+Ці правила підвантажуються автоматично лише під час роботи з файлами бекенду та міграцій БД.
+*(Увага: у Claude Code фільтр у YAML frontmatter називається строго `paths:`, а не `globs:`).*
+
+## 1. Роутери та контракти (FastAPI + Pydantic v2)
+
+- Еталонний роутер для наслідування структури: `services/api/routers/orders.py`.
+- Схеми запитів і відповідей описуй на **Pydantic v2** (`ConfigDict(from_attributes=True)` замість застарілого `class Config: orm_mode = True`).
+- Роутери залишаються тонкими: валідація вхідних даних + виклик сервісного шару з `services/api/domain/` + мапінг доменних помилок у HTTP-статуси.
+- Усі грошові поля у схемах мають тип `int` із суфіксом `_cents` (наприклад, `subtotal_cents: int`, `discount_cents: int`).
+
+## 2. База даних та сесії (SQLAlchemy 2.0 Async)
+
+- Використовуй виключно синтаксис SQLAlchemy 2.0 (`select()`, `AsyncSession`, типізовані колонки `Mapped[...]` та `mapped_column(...)`); застарілий `session.query()` заборонено.
+- Уникай прихованих `N+1` запитів: в асинхронному режимі ледаче довантаження зв'язків (`lazy="select"`) викличе `MissingGreenlet` — явно вказуй `selectinload()` або `joinedload()`.
+- Кожна транзакція запису мусить бути атомарною на рівні методу сервісу, а не розмазаною між кількома роутерами.
+
+## 3. Безпечні міграції Alembic (`services/api/migrations/`)
+
+- Кожна нова міграція мусить містити робочу зворотну функцію `downgrade()`, перевірену локально.
+- Заборонено додавати колонку `NOT NULL` без безпечного значення за замовчуванням на живих таблицях в один крок (використовуй цикл expand-and-contract).
+- Нові індекси на таблицях замовлень та транзакцій створюй через `postgresql_concurrently=True` всередині `op.get_context().autocommit_block()`.
+
+## 4. Верифікація після змін
+
+Перед завершенням правок у `services/api/` обов'язково запусти:
+1. `uv run ruff check services/api && uv run mypy services/api`
+2. `uv run pytest services/api/tests/unit -k <relevant_module> -q`

@@ -1,0 +1,18 @@
+# Приклад розведення особистого та робочого контурів у ~/.gitconfig
+# Особисті проєкти живуть у ~/Projects/, корпоративні — у ~/Work/
+
+[user]
+    name = Your Name
+    email = dev.personal@example.com
+
+[core]
+    autocrlf = input
+
+[includeIf "gitdir:~/Work/"]
+    path = ~/.gitconfig-work
+
+# --- Вміст файлу ~/.gitconfig-work ---
+# [user]
+#     name = Your Name
+#     email = your.name@company.example.com
+

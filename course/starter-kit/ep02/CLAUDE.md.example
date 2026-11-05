@@ -1,0 +1,73 @@
+# Project: Pulse Platform (B2B Order & Analytics Monorepo)
+
+B2B-платформа обробки замовлень та аналітики в реальному часі.
+Стек: Python 3.13 + FastAPI + SQLAlchemy 2.0 (async) + PostgreSQL 17 (`services/api/`),
+TypeScript + Next.js App Router + Tailwind CSS (`apps/web/`), спільні схеми (`packages/contracts/`).
+
+## Команди перевірки та налагодження
+
+- Один юніт-тест бекенду (пріоритетно): `uv run pytest services/api/tests/unit/<file>.py -k <test_name> -q`
+- Усі тести бекенду: `uv run pytest services/api/tests -q`
+- Лінтер і типи Python: `uv run ruff check . && uv run mypy services/api`
+- Типи і тести фронтенду: `pnpm --filter web typecheck && pnpm --filter web test -- --run`
+- Перевірка міграцій: `uv run alembic -c services/api/alembic.ini check`
+- Локальна інфраструктура (PostgreSQL + Redis) та логи: `docker compose up -d db redis` / `docker compose logs -f api --tail=100`
+
+## Карта архітектури та файли-зразки
+
+- Перед створенням нового REST-ендпоінта прочитай еталонний зразок `services/api/routers/orders.py` (DI, коди помилок, пагінація).
+- Перед зміною чи створенням таблиць БД звіряйся з `docs/architecture/db-conventions.md`.
+- Контракти між бекендом і фронтендом генеруються з OpenAPI у `packages/contracts/` (`pnpm generate:types` — не редагуй згенеровані файли вручну).
+- Спеціалізовані правила для окремих шарів підвантажуються автоматично з `.claude/rules/`.
+
+## Інваріанти та підводні камені
+
+- Грошові суми зберігаємо й передаємо **виключно в цілих центах (`int`)**; ніколи не використовуй `float` для грошей.
+- Часові мітки — тільки `UTC timezone-aware` (`datetime.now(UTC)`), ніколи наївний `datetime.utcnow()`.
+- Замість синхронного `requests` використовуй спільний пул `httpx.AsyncClient` із `services/api/core/http.py`.
+- Замість `print` та `console.log` використовуй структурований логер (`core.logging.get_logger` на Python, `lib/logger.ts` на TS).
+- Секрети та ключі API — тільки через змінні оточення (`.env` у `.gitignore`) або HashiCorp Vault; ніколи не хардкодити навіть у тестах.
+
+## Git та критерій готовності
+
+- Гілки: `feat/<ticket>-<slug>`, `fix/<ticket>-<slug>`. Повідомлення комітів — за стандартом Conventional Commits.
+- Не вважати задачу виконаною, доки лінтер, перевірка типів та цільові тести зміненого модуля не пройшли з нулем помилок.
+
+---
+
+<!-- =====================================================================
+ВАРІАНТ А (для мультиінструментальних команд):
+Тонкий редірект-стаб CLAUDE.md, якщо канонічний зміст живе в AGENTS.md
+=====================================================================
+@AGENTS.md
+
+Прочитай `AGENTS.md` у корені репозиторію перед будь-якими змінами в коді.
+Специфічні модульні правила для Claude Code лежать у `.claude/rules/`.
+===================================================================== -->
+
+<!-- =====================================================================
+ВАРІАНТ Б: Шаблон особистого глобального ~/.claude/CLAUDE.md під chezmoi
+(джерело в dotfiles: ~/.local/share/chezmoi/dot_claude/CLAUDE.md)
+=====================================================================
+# User-level rules — усі середовища (macOS, Linux, Windows WSL2)
+
+Цей файл керується через **chezmoi** (репозиторій `github.com/dev-architect/dotfiles`,
+шлях `dot_claude/CLAUDE.md`). Змінив правило тут → `chezmoi re-add ~/.claude/CLAUDE.md`,
+коміт і push; на інших машинах виконай `chezmoi update`. Окремий репо не створюй.
+
+## Середовище та контури Git
+- Код живе локально + на Git-сервері, ніколи в папках Google Drive / Dropbox / iCloud.
+- Особисті проєкти скрізь за єдиним шляхом `~/Projects/<group>/<repo>` (на Windows — тільки
+  всередині нативної Linux ФС у WSL2, ніколи на `/mnt/c` чи `/mnt/d`), пошта `dev@example.com`.
+- Наймана робота — фізично окремо у `~/Work/<repo>` (`git@gitlab.company.example`), пошта
+  `engineer@company.example` підставляється автоматично через `includeIf` у `~/.gitconfig`.
+  Ніколи не пушити робочі репозиторії в особистий GitHub.
+
+## Міжмашинна синхронізація та безпека
+- Якщо на старті сесії є розбіжність із upstream або чужі незакомічені правки — спершу запитати
+  користувача; самовільно не робити `rebase`, `merge` чи `stash`.
+- Кінець задачі: у `~/Projects/` — чистий коміт своїх змін і `git push`; у `~/Work/` — локальний
+  коміт, а перед `git push` обов'язково спитати дозволу (щоб не запускати корпоративний CI).
+- Незавершену роботу пушити в гілку `wip/<task>`, а не в `main`.
+- Перед першим комітом нового репо перевірити відсутність `.env`, `*.pem`, `*.key`, `credentials*`.
+===================================================================== -->

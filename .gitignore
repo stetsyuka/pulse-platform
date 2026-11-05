@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+node_modules/
+.next/
+.claude/settings.local.json
+.claude/worktrees/
+next-env.d.ts

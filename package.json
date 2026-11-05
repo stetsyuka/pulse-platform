@@ -1,0 +1,8 @@
+{
+  "name": "pulse-platform",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "generate:types": "pnpm --filter contracts generate"
+  }
+}
