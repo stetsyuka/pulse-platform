@@ -5,6 +5,7 @@ import asyncio
 import httpx
 
 from core.config import get_settings
+from core.http import get_http_client
 from core.logging import get_logger
 
 log = get_logger("workers.billing_retry")
@@ -14,9 +15,8 @@ MAX_ATTEMPTS = 5
 async def charge_order(order_id: int, amount_cents: int) -> bool:
     settings = get_settings()
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        client = httpx.AsyncClient(timeout=10.0)
         try:
-            resp = await client.post(
+            resp = await get_http_client().post(
                 f"{settings.billing_api_url}/charges",
                 json={"order_id": order_id, "amount_cents": amount_cents},
                 headers={"Authorization": f"Bearer {settings.billing_api_token}"},
