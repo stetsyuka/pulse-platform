@@ -98,3 +98,38 @@ async def test_client_error_fails_without_retry(session, partner):
     await worker.deliver_due(session)
     delivery = await session.get(WebhookDelivery, delivery_id)
     assert delivery is not None and delivery.status == "failed" and delivery.attempts == 1
+
+
+async def test_concurrent_enqueue_creates_single_delivery(tmp_path):
+    """Регресія з /code-review ultra: дві паралельні постановки однієї події."""
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from db.base import Base
+
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path}/race.db")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def enqueue() -> int:
+        async with maker() as s:
+            return await handler.enqueue_order_event(s, _event())
+
+    ids = await asyncio.gather(*(enqueue() for _ in range(5)))
+    async with maker() as s:
+        count = await s.scalar(select(func.count()).select_from(WebhookDelivery))
+    await engine.dispose()
+    assert count == 1
+    assert len(set(ids)) == 1
+
+
+async def test_worker_never_logs_signature(session, partner, caplog):
+    caplog.set_level("INFO", logger="webhooks.worker")
+    await handler.enqueue_order_event(session, _event())
+    await worker.deliver_due(session)
+    out = "\n".join(r.getMessage() for r in caplog.records)
+    assert out  # воркер щось логує
+    assert "X-Pulse-Signature" not in out
+    assert "sha256=" not in out

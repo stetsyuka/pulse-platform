@@ -28,7 +28,8 @@ async def _attempt(delivery: WebhookDelivery, now: datetime) -> None:
         **sign(body, settings.webhook_signing_secret),
     }
     delivery.attempts += 1
-    log.info(f"delivering {delivery.id} attempt {delivery.attempts} headers={headers}")
+    # Лише ідентифікатори: тіло, підпис і секрет у логи не потрапляють.
+    log.info(f"delivering {delivery.id} attempt {delivery.attempts}")
     try:
         resp = await get_http_client().post(
             settings.webhook_endpoint_url, content=body, headers=headers
