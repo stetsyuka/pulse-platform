@@ -4,6 +4,7 @@ from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import db.models  # noqa: F401  — реєструє таблиці в metadata
+import webhooks.models  # noqa: F401
 from core.config import get_settings
 from db.base import Base
 

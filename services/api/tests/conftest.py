@@ -9,6 +9,7 @@ import pytest  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
+import webhooks.models  # noqa: E402, F401
 from db.base import Base  # noqa: E402
 from db.session import get_session  # noqa: E402
 from main import app  # noqa: E402
