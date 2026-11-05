@@ -8,21 +8,21 @@
 ---
 
 ## 1. Що вже повністю зроблено і верифіковано
-- [x] **Чекпойнт 1 (Контракти й БД):** Створено міграцію та ORM-модель `webhook_deliveries` у `src/webhooks/models.py`, валідаційні схеми у `src/webhooks/schemas.py`. Міграція застосовується та відкочується чисто.
-- [x] **Чекпойнт 2 (Ядро логіки):** Реалізовано генератор підпису `HMAC-SHA256` з підтримкою подвійного ключа на час ротації (`src/webhooks/crypto.py`) та розрахунок експоненційного backoff. Покрито 14 юніт-тестами (`pytest tests/webhooks/test_core.py` — OK).
+- [x] **Чекпойнт 1 (Контракти й БД):** Створено міграцію та ORM-модель `webhook_deliveries` у `services/api/webhooks/models.py`, валідаційні схеми у `services/api/webhooks/schemas.py`. Міграція застосовується та відкочується чисто.
+- [x] **Чекпойнт 2 (Ядро логіки):** Реалізовано генератор підпису `HMAC-SHA256` з підтримкою подвійного ключа на час ротації (`services/api/webhooks/crypto.py`) та розрахунок експоненційного backoff. Покрито 14 юніт-тестами (`pytest tests/webhooks/test_core.py` — OK).
 
 ## 2. Точка зупинки (де ми зараз)
 - Зупинилися перед стартом **Чекпойнта 3 (Фоновий воркер доставки)**.
-- Файл `src/webhooks/worker.py` створено як порожній каркас з інтерфейсом класу `WebhookDispatcher`, але вибірка `SELECT ... FOR UPDATE SKIP LOCKED` ще не реалізована.
+- Файл `services/api/webhooks/worker.py` створено як порожній каркас з інтерфейсом класу `WebhookDispatcher`, але вибірка `SELECT ... FOR UPDATE SKIP LOCKED` ще не реалізована.
 
 ## 3. Прийняті архітектурні рішення та виявлені граблі (НЕ переглядати без причини!)
 - **Рішення:** Використовуємо таблицю PostgreSQL `outbox` із `SKIP LOCKED` замість окремої черги Redis, щоб гарантувати атомарність запису події в одній транзакції зі зміною статусу замовлення (див. `docs/decisions/004-webhook-outbox.md`).
 - **Граблі клієнта HTTP:** Спільний `httpx.AsyncClient` у `src/core/http.py` за замовчуванням мав тайм-аут `30s` і слідував за HTTP-редиректами (`follow_redirects=True`). Для вебхуків редиректи вимкнено з міркувань SSRF-безпеки, а жорсткий тайм-аут обмежено до `5.0s`.
 
 ## 4. Перші 3 точні кроки для нової сесії
-1. Прочитати `@HANDOFF.md`, `@docs/specs/[YYYY-MM-DD-feature-design.md]` та `@src/webhooks/models.py`.
-2. Реалізувати Чекпойнт 3 у `src/webhooks/worker.py` (пакетна вибірка по 50 подій через `FOR UPDATE SKIP LOCKED`, оновлення `next_retry_at` та переведення в статус `dead_letter` після 5 невдалих спроб).
-3. Написати інтеграційні тести конкурентної вибірки у `tests/webhooks/test_worker.py` та переконатися, що `pytest tests/webhooks/ -q && mypy src/webhooks/` проходить з нулем помилок, після чого зробити атомарний коміт і оновити цей `HANDOFF.md`.
+1. Прочитати `@HANDOFF.md`, `@docs/specs/[YYYY-MM-DD-feature-design.md]` та `@services/api/webhooks/models.py`.
+2. Реалізувати Чекпойнт 3 у `services/api/webhooks/worker.py` (пакетна вибірка по 50 подій через `FOR UPDATE SKIP LOCKED`, оновлення `next_retry_at` та переведення в статус `dead_letter` після 5 невдалих спроб).
+3. Написати інтеграційні тести конкурентної вибірки у `tests/webhooks/test_worker.py` та переконатися, що `pytest tests/webhooks/ -q && mypy services/api/webhooks/` проходить з нулем помилок, після чого зробити атомарний коміт і оновити цей `HANDOFF.md`.
 
 ---
 

@@ -13,7 +13,7 @@
 
 ### 2. Координати входу та Зразок (@)
 - Точка входу: @[src/module/entry.py]
-- Пов'язані схеми / моделі: @[src/db/models.py]
+- Пов'язані схеми / моделі: @[services/api/db/models.py]
 - Візьми за зразок стилю, помилок і тестів: @[src/existing_feature/worker.py] та @[tests/existing_feature/test_worker.py]
 
 ### 3. Кордони (Чого НЕ чіпати)
