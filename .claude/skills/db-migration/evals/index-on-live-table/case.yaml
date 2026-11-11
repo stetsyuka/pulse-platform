@@ -11,7 +11,7 @@ execution:
     по колонці status. Створи міграцію Alembic у файлі
     services/api/migrations/versions/0003_orders_status_index.py (revision "0003", down_revision "0002").
     До бази нічого не застосовуй.
-  max_turns: 12
+  max_turns: 15
   timeout_seconds: 240
   allowed_tools: [Read, Glob, Grep, Write, Edit, Skill]
 runs: 3
@@ -25,11 +25,15 @@ graders:
     path: services/api/migrations/versions/0003_orders_status_index.py
   - type: regex
     name: concurrent-index
-    target: files
+    target:
+      source: file
+      path: services/api/migrations/versions/0003_orders_status_index.py
     pattern: postgresql_concurrently\s*=\s*True
   - type: regex
     name: autocommit-block
-    target: files
+    target:
+      source: file
+      path: services/api/migrations/versions/0003_orders_status_index.py
     pattern: autocommit_block\(\)
   - type: llm
     name: explains-why
