@@ -28,7 +28,8 @@ graders:
     target:
       source: file
       path: services/api/migrations/versions/0003_orders_status_index.py
-    pattern: postgresql_concurrently\s*=\s*True
+    pattern: postgresql_concurrently\s*=\s*True|CREATE\s+INDEX\s+CONCURRENTLY
+    flags: i
   - type: regex
     name: autocommit-block
     target:
