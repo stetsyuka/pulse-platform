@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/hooks/git-sync-start.sh\"",
+            "timeout": 30,
+            "statusMessage": "git-sync: перевіряю стан репозиторію…"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/smart-notify.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-destructive-commands.py\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "bash -c 'cd \"$CLAUDE_PROJECT_DIR\" && uv run pytest -q --tb=short >&2 || exit 2'",
+            "timeout": 60,
+            "statusMessage": "Перевіряю тести перед git commit…"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/smart-notify.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'f=$(jq -r \".tool_input.file_path // empty\"); case \"$f\" in *.py) ruff format \"$f\" >/dev/null 2>&1 && ruff check --fix \"$f\" >/dev/null 2>&1 ;; *.ts|*.tsx|*.js|*.json) npx @biomejs/biome check --write \"$f\" >/dev/null 2>&1 ;; esac; exit 0'",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'jq -r \"[(.session_id // \\\"-\\\"), (.tool_input.command // \\\"\\\")] | @tsv\" >> \"$HOME/.claude/audit-bash.log\"'",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-make-check.sh\"",
+            "timeout": 300,
+            "statusMessage": "make check перед завершенням…"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/hooks/git-sync-stop.sh\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.claude/hooks/smart-notify.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
