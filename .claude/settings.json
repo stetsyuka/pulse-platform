@@ -18,7 +18,9 @@
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__arch-kg__*",
+      "mcp__postgres-kg__*"
     ],
     "ask": [
       "Bash(git push:*)",
@@ -113,5 +115,10 @@
         ]
       }
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "context7",
+    "arch-kg",
+    "postgres-kg"
+  ]
 }
