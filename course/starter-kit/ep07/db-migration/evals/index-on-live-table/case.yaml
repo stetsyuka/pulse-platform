@@ -1,0 +1,43 @@
+# Регресійний тест навички db-migration (Серія 07):
+#   claude plugin eval .claude/skills/db-migration --runs 3 --threshold 0.9 --model haiku --max-cost-usd 1.50 --no-publish
+# Кейс самодостатній: агент працює в порожній теці, тож усе потрібне — в запиті.
+schema_version: "1.0"
+name: index-on-live-table
+description: Індекс на живій таблиці має будуватися конкурентно, а downgrade — бути симетричним.
+tags: [database, regression]
+execution:
+  prompt: |
+    У pulse-platform жива таблиця orders має кілька мільйонів рядків, і для звіту потрібен індекс
+    по колонці status. Створи міграцію Alembic у файлі
+    services/api/migrations/versions/0003_orders_status_index.py (revision "0003", down_revision "0002").
+    До бази нічого не застосовуй.
+  max_turns: 15
+  timeout_seconds: 240
+  allowed_tools: [Read, Glob, Grep, Write, Edit, Skill]
+runs: 3
+graders:
+  - type: tool_used
+    name: skill-fired
+    tool: Skill
+    input_match: db-migration
+  - type: file_exists
+    name: migration-written
+    path: services/api/migrations/versions/0003_orders_status_index.py
+  - type: regex
+    name: concurrent-index
+    target:
+      source: file
+      path: services/api/migrations/versions/0003_orders_status_index.py
+    pattern: postgresql_concurrently\s*=\s*True|CREATE\s+INDEX\s+CONCURRENTLY
+    flags: i
+  - type: regex
+    name: autocommit-block
+    target:
+      source: file
+      path: services/api/migrations/versions/0003_orders_status_index.py
+    pattern: autocommit_block\(\)
+  - type: llm
+    name: explains-why
+    criteria: >-
+      Відповідь пояснює, чому індекс будується конкурентно (звичайний CREATE INDEX блокує запис у
+      живу таблицю), а downgrade() видаляє індекс, а не порожній.
