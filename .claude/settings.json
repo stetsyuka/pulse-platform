@@ -118,6 +118,7 @@
   },
   "enabledMcpjsonServers": [
     "context7",
+    "linear",
     "arch-kg",
     "postgres-kg"
   ]
